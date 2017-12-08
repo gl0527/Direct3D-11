@@ -154,9 +154,27 @@ HRESULT Game::createResources() {
 	ComPtr<ID3DBlob> podBodyPSBC = loadShaderCode (podBodyPSFile);
 	Egg::Mesh::Shader::P podBodyPS = Egg::Mesh::Shader::create (podBodyPSFile, device, podBodyPSBC);
 
+	podBodyMaterial->setShader (Egg::Mesh::ShaderStageFlag::Vertex, podBodyVS);
+	podBodyMaterial->setShader (Egg::Mesh::ShaderStageFlag::Pixel, podBodyPS);
+
 	podBodyMaterial->setCb ("perFrame", renderParameters.perFrameConstantBuffer);
 	podBodyMaterial->setShaderResource ("envTexture", envSrv);
-	podBodyMaterial->setSamplerState ("ss", ss);
+	podBodyMaterial->setSamplerState ("ss", groundSampler);
+
+	
+	//D3D11_BUFFER_DESC matcapBufferDesc;
+	//matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	//matcapBufferDesc.ByteWidth = sizeof (Egg::Math::float4x4);
+	//matcapBufferDesc.CPUAccessFlags = 0;
+	//matcapBufferDesc.MiscFlags = 0;
+	//matcapBufferDesc.StructureByteStride = 0;
+	//matcapBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	//Egg::ThrowOnFail ("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
+	//	device->CreateBuffer (&matcapBufferDesc, nullptr, matcapBuffer.GetAddressOf ());
+	//
+	//podBodyMaterial->setCb ("matCap", matcapBuffer);
+	//podBodyMaterial->setSamplerState ("ss", groundSampler);
+
 
 	////////////////////////////////////
 	// SET THE PHYSICS OF THE POD MESH
@@ -203,6 +221,9 @@ void Game::render(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 	float clearColor[4] = { 0.9f, 0.7f, 0.1f, 0.0f };
 	context->ClearRenderTargetView(defaultRenderTargetView.Get(), clearColor);
 	context->ClearDepthStencilView(defaultDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0, 0);
+
+	float4x4 viewMat = cameras.at(currentCamera)->getViewMatrix ();
+	//context->UpdateSubresource (matcapBuffer.Get (), 0, nullptr, &viewMat, 0, 0);
 
 	Egg::Physics::PhysicsApp::render(context);
 

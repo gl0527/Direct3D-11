@@ -3,7 +3,7 @@
 
 GG_SUBCLASS(Game, Egg::Physics::PhysicsApp)
 	Egg::Mesh::Shaded::P backgroundMesh;
-
+	Microsoft::WRL::ComPtr<ID3D11Buffer> matcapBuffer;
 public:
 	Game(Microsoft::WRL::ComPtr<ID3D11Device> device);
 	~Game(void);

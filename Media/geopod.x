@@ -5,7 +5,7 @@ Material lambert1 {
 	 0.000000;
 	 0.000000; 0.000000; 0.000000;;
 	 0.000000; 0.000000; 0.000000;;
-	TextureFileName {"fiesta.jpg";}
+	TextureFileName {"ggmetal.png";}
 }
 Material lambert2 {
 	 0.800000; 0.800000; 0.800000; 1.000000;;
