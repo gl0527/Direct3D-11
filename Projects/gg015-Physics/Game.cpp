@@ -86,7 +86,7 @@ HRESULT Game::createResources() {
 
 	auto groundModel = Physics::Model::create();
 	groundModel->rigidBodyFlags = PxRigidBodyFlag::eKINEMATIC;
-	PxMaterial* pxGroundMaterial = physics->createMaterial (0.5, 0.5, 0.9);
+	PxMaterial* pxGroundMaterial = physics->createMaterial (0.9, 0.9, 0.9);
 	groundModel->addShape(physics->createShape(PxBoxGeometry (500.0f, 3.5f, 500.0f), *pxGroundMaterial));
 	auto groundRigidBody = Physics::PhysicsRigidBody::create (scene, groundModel, float3 (0, 0, 0), float4 (0, 0, 0, 1));
 	auto groundEntity = Scene::Entity::create (groundMesh, groundRigidBody);
@@ -161,21 +161,6 @@ HRESULT Game::createResources() {
 	podBodyMaterial->setShaderResource ("envTexture", envSrv);
 	podBodyMaterial->setSamplerState ("ss", groundSampler);
 	
-	/*D3D11_BUFFER_DESC matcapBufferDesc;
-	matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matcapBufferDesc.ByteWidth = sizeof (Egg::Math::float4x4);
-	matcapBufferDesc.CPUAccessFlags = 0;
-	matcapBufferDesc.MiscFlags = 0;
-	matcapBufferDesc.StructureByteStride = 0;
-	matcapBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	Egg::ThrowOnFail ("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
-		device->CreateBuffer (&matcapBufferDesc, nullptr, matcapBuffer.GetAddressOf ());
-	
-	podBodyMaterial->setCb ("matCap", matcapBuffer);
-	podBodyMaterial->setShaderResource ("envTexture", envSrv);
-	podBodyMaterial->setSamplerState ("ss", groundSampler);*/
-
-
 	////////////////////////////////////
 	// SET THE PHYSICS OF THE POD MESH
 	////////////////////////////////////
@@ -226,7 +211,7 @@ HRESULT Game::createResources() {
 	ballMaterial->setShader (Egg::Mesh::ShaderStageFlag::Vertex, ballVS);
 	ballMaterial->setShader (Egg::Mesh::ShaderStageFlag::Pixel, ballPS);
 
-	auto ballTexSRV = loadSrv ("matcap_steel.jpg");
+	auto ballTexSRV = loadSrv ("matcap.jpg");
 
 	D3D11_BUFFER_DESC matcapBufferDesc;
 	matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;

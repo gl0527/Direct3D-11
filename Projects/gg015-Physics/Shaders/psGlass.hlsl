@@ -26,7 +26,7 @@ float4 psGlass (VsosTrafo input) : SV_TARGET
 {
 	// https://digitalerr0r.wordpress.com/2009/05/03/xna-shader-programming-tutorial-16-refraction/
 	float3 rayDir = normalize (input.worldPos.xyz - viewPos.xyz);
-	float3 norm = normalize (input.normal);
+	float3 norm = normalize (input.worldNorm);
 	
 	float3 reflDir = reflect (rayDir, norm);
 	float3 refrDir = refract (rayDir, norm, 0.6581f);	// 0.6581f = refrIdx_of_air / refrIdx_of_glass
