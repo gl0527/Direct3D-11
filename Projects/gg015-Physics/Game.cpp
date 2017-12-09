@@ -160,20 +160,20 @@ HRESULT Game::createResources() {
 	podBodyMaterial->setCb ("perFrame", renderParameters.perFrameConstantBuffer);
 	podBodyMaterial->setShaderResource ("envTexture", envSrv);
 	podBodyMaterial->setSamplerState ("ss", groundSampler);
-
 	
-	//D3D11_BUFFER_DESC matcapBufferDesc;
-	//matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	//matcapBufferDesc.ByteWidth = sizeof (Egg::Math::float4x4);
-	//matcapBufferDesc.CPUAccessFlags = 0;
-	//matcapBufferDesc.MiscFlags = 0;
-	//matcapBufferDesc.StructureByteStride = 0;
-	//matcapBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	//Egg::ThrowOnFail ("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
-	//	device->CreateBuffer (&matcapBufferDesc, nullptr, matcapBuffer.GetAddressOf ());
-	//
-	//podBodyMaterial->setCb ("matCap", matcapBuffer);
-	//podBodyMaterial->setSamplerState ("ss", groundSampler);
+	/*D3D11_BUFFER_DESC matcapBufferDesc;
+	matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matcapBufferDesc.ByteWidth = sizeof (Egg::Math::float4x4);
+	matcapBufferDesc.CPUAccessFlags = 0;
+	matcapBufferDesc.MiscFlags = 0;
+	matcapBufferDesc.StructureByteStride = 0;
+	matcapBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	Egg::ThrowOnFail ("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
+		device->CreateBuffer (&matcapBufferDesc, nullptr, matcapBuffer.GetAddressOf ());
+	
+	podBodyMaterial->setCb ("matCap", matcapBuffer);
+	podBodyMaterial->setShaderResource ("envTexture", envSrv);
+	podBodyMaterial->setSamplerState ("ss", groundSampler);*/
 
 
 	////////////////////////////////////
@@ -207,6 +207,49 @@ HRESULT Game::createResources() {
 	podEntity->setController(Control::AvatarLogic::create(scene, rocketMesh, rocketModel));
 	entities.push_back(podEntity);
 
+	////////////////////////////////////
+	// BALL
+	////////////////////////////////////
+
+	auto ballMesh = loadMultiMesh ("ball.obj", 0, "ball");
+	auto ballMaterial = ballMesh->getSubmesh (0)->getShaded (renderParameters.mien)->getMaterial ();
+
+	const char* ballVSFile = "vsTrafo.cso";
+	const char* ballPSFile = "psMatcap.cso";
+
+	ComPtr<ID3DBlob> ballVSBC = loadShaderCode (ballVSFile);
+	Egg::Mesh::Shader::P ballVS = Egg::Mesh::Shader::create (ballVSFile, device, ballVSBC);
+
+	ComPtr<ID3DBlob> ballPSBC = loadShaderCode (ballPSFile);
+	Egg::Mesh::Shader::P ballPS = Egg::Mesh::Shader::create (ballPSFile, device, ballPSBC);
+
+	ballMaterial->setShader (Egg::Mesh::ShaderStageFlag::Vertex, ballVS);
+	ballMaterial->setShader (Egg::Mesh::ShaderStageFlag::Pixel, ballPS);
+
+	auto ballTexSRV = loadSrv ("matcap_steel.jpg");
+
+	D3D11_BUFFER_DESC matcapBufferDesc;
+	matcapBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matcapBufferDesc.ByteWidth = sizeof (Egg::Math::float4x4);
+	matcapBufferDesc.CPUAccessFlags = 0;
+	matcapBufferDesc.MiscFlags = 0;
+	matcapBufferDesc.StructureByteStride = 0;
+	matcapBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	Egg::ThrowOnFail ("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
+		device->CreateBuffer (&matcapBufferDesc, nullptr, matcapBuffer.GetAddressOf ());
+	
+	ballMaterial->setCb ("matCap", matcapBuffer);
+	ballMaterial->setShaderResource ("kd", ballTexSRV);
+	ballMaterial->setSamplerState ("ss", groundSampler);
+
+	auto ballModel = Physics::Model::create ();
+	PxMaterial* pxBallMaterial = physics->createMaterial (0.1f, 0.1f, 0.2f);
+	ballModel->addShape(physics->createShape(PxSphereGeometry (3), *pxBallMaterial));
+	auto ballRigidBody = Physics::PhysicsRigidBody::create (scene, ballModel, float3 (20.0f, 20.0f, -12.0f), float4 (0,0,0,1));
+	
+	auto ballEntity = Scene::Entity::create (ballMesh, ballRigidBody);
+	entities.push_back (ballEntity);
+
 	return S_OK;
 }
 
@@ -223,7 +266,7 @@ void Game::render(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 	context->ClearDepthStencilView(defaultDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0, 0);
 
 	float4x4 viewMat = cameras.at(currentCamera)->getViewMatrix ();
-	//context->UpdateSubresource (matcapBuffer.Get (), 0, nullptr, &viewMat, 0, 0);
+	context->UpdateSubresource (matcapBuffer.Get (), 0, nullptr, &viewMat, 0, 0);
 
 	Egg::Physics::PhysicsApp::render(context);
 
