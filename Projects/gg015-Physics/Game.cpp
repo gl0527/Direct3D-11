@@ -65,13 +65,16 @@ HRESULT Game::createResources() {
 	auto groundMaterial = groundMesh->getSubmesh (0)->getShaded (renderParameters.mien)->getMaterial ();
 
 	const char* groundVSFile = "vsTrafo.cso";
-	const char* groundPSFile = "psIdle.cso";
+	const char* groundPSFile = "psBumpMap.cso";
 
 	ComPtr<ID3DBlob> groundVSBC = loadShaderCode (groundVSFile);
 	Egg::Mesh::Shader::P groundVS = Egg::Mesh::Shader::create (groundVSFile, device, groundVSBC);
 
 	ComPtr<ID3DBlob> groundPSBC = loadShaderCode (groundPSFile);
 	Egg::Mesh::Shader::P groundPS = Egg::Mesh::Shader::create (groundPSFile, device, groundPSBC);
+
+	groundMaterial->setShader (Egg::Mesh::ShaderStageFlag::Vertex, groundVS);
+	groundMaterial->setShader (Egg::Mesh::ShaderStageFlag::Pixel, groundPS);
 
 	ComPtr<ID3D11SamplerState> groundSampler;
 	CD3D11_SAMPLER_DESC groundSamplerDesc = CD3D11_SAMPLER_DESC (CD3D11_DEFAULT ());
@@ -80,9 +83,11 @@ HRESULT Game::createResources() {
 	Egg::ThrowOnFail ("Could not create SS.", __FILE__, __LINE__) ^
 		device->CreateSamplerState (&groundSamplerDesc, groundSampler.GetAddressOf ());
 
+	auto noiseSRV = loadSrv ("normalmap_dirt.jpg");
+
 	groundMaterial->setCb ("perFrame", renderParameters.perFrameConstantBuffer);
-	groundMaterial->setShaderResource ("envTexture", envSrv);
 	groundMaterial->setSamplerState ("ss", groundSampler);
+	groundMaterial->setShaderResource ("bump", noiseSRV);
 
 	auto groundModel = Physics::Model::create();
 	groundModel->rigidBodyFlags = PxRigidBodyFlag::eKINEMATIC;
@@ -146,7 +151,7 @@ HRESULT Game::createResources() {
 	auto podBodyMaterial = podBodyShaded->getMaterial ();
 
 	const char* podBodyVSFile = "vsTrafo.cso";
-	const char* podBodyPSFile = "psIdle.cso";
+	const char* podBodyPSFile = "psBumpMap.cso";
 
 	ComPtr<ID3DBlob> podGBodyVSBC = loadShaderCode (podBodyVSFile);
 	Egg::Mesh::Shader::P podBodyVS = Egg::Mesh::Shader::create (podBodyVSFile, device, podGBodyVSBC);
@@ -157,9 +162,11 @@ HRESULT Game::createResources() {
 	podBodyMaterial->setShader (Egg::Mesh::ShaderStageFlag::Vertex, podBodyVS);
 	podBodyMaterial->setShader (Egg::Mesh::ShaderStageFlag::Pixel, podBodyPS);
 
+	auto metalNormMapSRV = loadSrv ("normalmap_metal.jpg");
+
 	podBodyMaterial->setCb ("perFrame", renderParameters.perFrameConstantBuffer);
-	podBodyMaterial->setShaderResource ("envTexture", envSrv);
 	podBodyMaterial->setSamplerState ("ss", groundSampler);
+	podBodyMaterial->setShaderResource ("bump", metalNormMapSRV);
 	
 	////////////////////////////////////
 	// SET THE PHYSICS OF THE POD MESH
@@ -193,7 +200,7 @@ HRESULT Game::createResources() {
 	entities.push_back(podEntity);
 
 	////////////////////////////////////
-	// BALL
+	// BALL - 1
 	////////////////////////////////////
 
 	auto ballMesh = loadMultiMesh ("ball.obj", 0, "ball");
@@ -234,6 +241,74 @@ HRESULT Game::createResources() {
 	
 	auto ballEntity = Scene::Entity::create (ballMesh, ballRigidBody);
 	entities.push_back (ballEntity);
+
+	////////////////////////////////////
+	// BALL - 2
+	////////////////////////////////////
+
+	auto ball2Mesh = loadMultiMesh ("ball.obj", 0, "ball2");
+	auto ball2Material = ball2Mesh->getSubmesh (0)->getShaded (renderParameters.mien)->getMaterial ();
+
+	const char* ball2VSFile = "vsTrafo.cso";
+	const char* ball2PSFile = "psEnvMapped.cso";
+
+	ComPtr<ID3DBlob> ball2VSBC = loadShaderCode (ball2VSFile);
+	Egg::Mesh::Shader::P ball2VS = Egg::Mesh::Shader::create (ball2VSFile, device, ball2VSBC);
+
+	ComPtr<ID3DBlob> ball2PSBC = loadShaderCode (ball2PSFile);
+	Egg::Mesh::Shader::P ball2PS = Egg::Mesh::Shader::create (ball2PSFile, device, ball2PSBC);
+
+	ball2Material->setShader (Egg::Mesh::ShaderStageFlag::Vertex, ball2VS);
+	ball2Material->setShader (Egg::Mesh::ShaderStageFlag::Pixel, ball2PS);
+
+	auto ball2TexSRV = loadSrv ("orange.jpg");
+
+	ball2Material->setShaderResource ("kd", ball2TexSRV);
+	ball2Material->setShaderResource ("envTexture", envSrv);
+	ball2Material->setSamplerState ("linearSampler", groundSampler);
+
+	auto ball2Model = Physics::Model::create ();
+	PxMaterial* pxball2Material = physics->createMaterial (0.1f, 0.1f, 0.2f);
+	ball2Model->addShape (physics->createShape (PxSphereGeometry (3), *pxball2Material));
+	auto ball2RigidBody = Physics::PhysicsRigidBody::create (scene, ball2Model, float3 (20.0f, 20.0f, 12.0f), float4 (0, 0, 0, 1));
+
+	auto ball2Entity = Scene::Entity::create (ball2Mesh, ball2RigidBody);
+	entities.push_back (ball2Entity);
+
+
+	////////////////////////////////////
+	// BALL - 3
+	////////////////////////////////////
+
+	auto ball3Mesh = loadMultiMesh ("ball.obj", 0, "ball3");
+	auto ball3Material = ball3Mesh->getSubmesh (0)->getShaded (renderParameters.mien)->getMaterial ();
+
+	const char* ball3VSFile = "vsTrafo.cso";
+	const char* ball3PSFile = "psBumpMap.cso";
+
+	ComPtr<ID3DBlob> ball3VSBC = loadShaderCode (ball3VSFile);
+	Egg::Mesh::Shader::P ball3VS = Egg::Mesh::Shader::create (ball3VSFile, device, ball3VSBC);
+
+	ComPtr<ID3DBlob> ball3PSBC = loadShaderCode (ball3PSFile);
+	Egg::Mesh::Shader::P ball3PS = Egg::Mesh::Shader::create (ball3PSFile, device, ball3PSBC);
+
+	ball3Material->setShader (Egg::Mesh::ShaderStageFlag::Vertex, ball3VS);
+	ball3Material->setShader (Egg::Mesh::ShaderStageFlag::Pixel, ball3PS);
+
+	auto ball3TexSRV = loadSrv ("orange.jpg");
+	auto ball3NormalMapSRV = loadSrv ("normalmap_orange.jpg");
+
+	ball3Material->setShaderResource ("kd", ball3TexSRV);
+	ball3Material->setShaderResource ("bump", ball3NormalMapSRV);
+	ball3Material->setSamplerState ("linearSampler", groundSampler);
+
+	auto ball3Model = Physics::Model::create ();
+	PxMaterial* pxball3Material = physics->createMaterial (0.1f, 0.1f, 0.2f);
+	ball3Model->addShape (physics->createShape (PxSphereGeometry (3), *pxball3Material));
+	auto ball3RigidBody = Physics::PhysicsRigidBody::create (scene, ball3Model, float3 (20.0f, 20.0f, -12.0f), float4 (0, 0, 0, 1));
+
+	auto ball3Entity = Scene::Entity::create (ball3Mesh, ball3RigidBody);
+	entities.push_back (ball3Entity);
 
 	return S_OK;
 }

@@ -29,7 +29,7 @@ HRESULT Scene::ManagerApp::createResources()
 	Egg::ThrowOnFail("Failed to create per object constant buffer.", __FILE__, __LINE__) ^
 		device->CreateBuffer(&constantBufferDesc, nullptr, renderParameters.perObjectConstantBuffer.GetAddressOf());
 
-	constantBufferDesc.ByteWidth = sizeof(Egg::Math::float4) * 1;
+	constantBufferDesc.ByteWidth = sizeof(Egg::Math::float4) * 3;
 	Egg::ThrowOnFail("Failed to create per frame constant buffer.", __FILE__, __LINE__) ^
 		device->CreateBuffer(&constantBufferDesc, nullptr, renderParameters.perFrameConstantBuffer.GetAddressOf());
 
@@ -54,8 +54,12 @@ void Scene::ManagerApp::render(Microsoft::WRL::ComPtr<ID3D11DeviceContext> conte
 	renderParameters.context = context;
 	renderParameters.camera = cameras.at(currentCamera);
 	
-	Math::float4 perFrameVectors = cameras.at(currentCamera)->getEyePosition ().xyz1;
-	context->UpdateSubresource (renderParameters.perFrameConstantBuffer.Get (), 0, nullptr, &perFrameVectors, 0, 0);
+	Math::float4 perFrameVectors[3] = {
+		cameras.at (currentCamera)->getEyePosition ().xyz1,
+		Math::float4 (-3000.0f, 20000.0f, -1000.0f, 0.0f),
+		Math::float4 (0.89f, 0.55f, 0.21f, 1.0f)
+	};
+	context->UpdateSubresource (renderParameters.perFrameConstantBuffer.Get (), 0, nullptr, perFrameVectors, 0, 0);
 
 	for (auto& entity : entities) {
 		entity->render(renderParameters);

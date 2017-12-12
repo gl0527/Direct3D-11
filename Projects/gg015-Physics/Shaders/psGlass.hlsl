@@ -2,6 +2,8 @@
 
 cbuffer perFrame {
 	float4 viewPos;
+	float4 lightPos;
+	float4 lightPowerDensity;
 };
 
 TextureCube envTexture;

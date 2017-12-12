@@ -1,6 +1,7 @@
 #include "trafo.hlsli"
 
 Texture2D kd;
+Texture2D bump;
 SamplerState ss;
 
 cbuffer perFrame {
@@ -9,13 +10,16 @@ cbuffer perFrame {
 	float4 lightPowerDensity;
 };
 
-float4 psIdle(VsosTrafo input) : SV_Target{
-	
+float4 psBumpMap (VsosTrafo input) : SV_Target{
+
 	float4 ks = float4 (1.0f, 1.0f, 1.0f, 16.0f);
 	float4 ka = float4 (0.1f, 0.1f, 0.1f, 1.0f);
 
 	// we have to normalize the interpolated normal vector to ensure its unit length
 	float3 n = normalize (input.worldNorm);
+
+	// perturbate the normal vector with the bump map
+	n = normalize (n + 0.9f * bump.Sample (ss, input.tex));
 
 	float3 lightDir = normalize (lightPos.xyz - input.worldPos.xyz);
 	float cosTheta = dot (n, lightDir);
